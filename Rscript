@@ -1,0 +1,268 @@
+rm(list=ls()) # Clean environment
+
+dir()  # check that needed csv files are in the working directory
+
+PMA<-read.csv2("pma20.csv", stringsAsFactors = F)  # Read in tree data
+YMA<-read.csv2("yma20.csv", stringsAsFactors = F)  # Read in plot data
+
+names(PMA)
+names(YMA)
+
+# Calculate the average of d1 and d2 in PMA
+PMA$dk<-with(PMA, ifelse(d2>0 & !is.na(d2), (d1+d2)/2, d1))
+summary(PMA$dk)
+
+# Check if d equal to dk in PMA
+with(PMA,sum(dk==d, na.rm = T))
+
+with(PMA,sum(!dk==d, na.rm = T))
+
+with(PMA,sum(abs(d-dk)>0.0000001,na.rm = T))
+
+vars<-c("prt","aasta","d","dk","pl","rinn")
+ERRORS<-subset(PMA,!d==dk,select = vars)
+with(PMA,sum(abs(d-dk)>0.00000001,na.rm = T))
+
+# Factors
+# For simple frequency using factor-type is not necessary
+table(PMA$rin)
+table(PMA$pl)
+
+# Create a new column "rinf" as factor
+PMA$rinf<-factor(PMA$rin)
+as.numeric(PMA$rinf)[1:5]
+as.character(PMA$rinf)[1:5]
+
+# Factor levels order is alphabetical by default
+PMA$plf<-factor(PMA$pl)
+table(PMA$plf)
+
+# Create plf otherwise
+PMA$plf<-factor(PMA$pl, levels=c("MA","KU","KS","HB","LM","LV"))
+levels(PMA$plf)
+table(PMA$plf)
+X<-subset(PMA,!pl %in% c("MA","KU","KS","HB","LM","LV"))
+
+# Order descending or ascending order
+pliigid<-sort(table(PMA$pl),decreasing = T)
+names(pliigid)
+PMA$plf<-factor(PMA$pl, levels = names(pliigid))
+X<-subset(PMA,!pl%in% c("MA","KU","KS","HB","LM","LV"))
+
+# Indexing a data frame
+# To view second row in a data base;
+X<-PMA[2,]
+
+# To view contents of the second row, from columns 3 to 5
+X1<-PMA[2,3:5]
+
+# Order PMA by diameter (d) in decreasing order
+X2<-PMA[order(PMA$d,decreasing = T),]
+
+# The regular order of PMA
+order(PMA$prt,PMA$aasta,PMA$puu)[1:5]
+PMA<-PMA[order(PMA$prt,PMA$aasta,PMA$puu),]
+
+# Transform continuous variable to factor
+PMA$dkl<-cut(PMA$d,breaks = c(0,12,32,Inf),right = F,labels = c("Fine","Mod","Big"))
+
+# Understanding how "cut" and "breaks" works using student grades examples
+points<-runif(50,0,100)
+points
+grades<-cut(points,breaks = c(0,50,6:10*10),labels = LETTERS[6:1],right = F)
+table(grades)
+
+# Exercises with YMA data set
+# Total number of plots
+length(YMA$prt) # or
+length(paste(YMA$prt,YMA$aasta))
+
+# Actual number of plots (removing the re-occurrences)
+length(unique(YMA$prt))
+
+LivingTreeN<-aggregate(d~prt+aasta,data = subset(PMA,rin %in% 
+            c("1","2","A","E","Y")),length)
+
+# Exercises, codes and answers (Test your knowledge)
+
+# How many plots are there in the Oxalis-Myrtillus (JM) site type?
+# First is to create a subset of Oxalist site type
+P_OXA<-subset(YMA,kkt=="JM")
+Prt_Oxa<-length(unique(P_OXA$prt))
+# Answer is 8
+
+# How many plot measurements have been taken at the age of 31-40 years?
+with(subset(YMA,vanus>=31 & vanus<=40),length(prt))
+# Answer is 31
+
+# How many plots of the Oxalis-Rhodococcum (JP) site type have been measured 
+# less than four times?
+with(subset(YMA,kkt=="JP" & mxkord<4), length(unique(prt)))
+# Answer is 1
+
+# Calculate the average age of the plots of the Oxalis-Rhodococcum site type 
+# (JP) measured in 2007-2011 (report the result to at least two decimal places)
+P_jp2<-subset(P_jp,aasta>=2007 & aasta<=2011)
+mean(P_jp2$vanus)
+round(mean(P_jp2$vanus), digits = 2)
+# Answer is 74.27
+
+# How many measurements of the first or second storey coniferous trees have 
+# been made? (Conifers are coded KD, KU, LH, MA, NU, TO)
+Rin<-subset(PMA,rin %in% c(1,2))
+Rin1<-subset(Rin,pl %in% c("KD", "KU", "LH", "MA", "NU", "TO"))
+# Answer is 35401
+
+# How many plots have larch (LH) or fir (NU) trees measured?
+with(subset(PMA,pl=="LH" | pl=="NU"),length(unique(prt)))
+# Answeris 2
+
+# Find the largest diameter (d) of non-spruce (KU) trees of the second storey 
+# measured in 2010 or 2014.
+D<-subset(PMA,!pl=="KU" & rin==2)
+D1<-subset(D,aasta==2010 | aasta==2014)
+max(D1$d)
+# Answer is 24.4
+
+# How many plots of Oxalis-Myrtillus (JM) have been measured more than four 
+# times?
+with(subset(YMA,kkt=="JM" & mxkord>4), length(unique(prt)))
+# Answer is 2
+
+# How many plot measurements have been taken at the age of 40-59 years?
+with(subset(YMA,vanus>=40 & vanus<=59),length(prt))
+# Answer is 65
+
+# How many plots are there in the Myrtillus (MS) or Oxalis-Myrtillus (JM) site 
+# types (both together)?
+with(subset(YMA,kkt=="MS" |kkt=="JM"), length(unique(prt)))
+# Answer should be 27
+
+# Calculate the average age of the plots of the Rhodococcum (PH) site type 
+# measured in 2002-2006 (report the result to at least two decimal places)
+PH<-subset(YMA,aasta>=2002 & aasta<=2006)
+PH1<-subset(PH,kkt=="PH")
+mean(PH1$vanus)
+round(mean(PH1$vanus), digits = 2)
+
+# Or
+
+D4<-with(subset(YMA,kkt=="PH" & aasta>=2002 & aasta<=2006),mean(vanus))
+round(D4, digits = 2)
+# Answer is 62.12
+
+# How many the first storey deciduous tree measurements have been made? 
+# (Conifers are coded KD, KU, LH, MA, NU, TO, other codes are deciduous)
+
+R1<-subset(PMA,rin==1 & !pl %in% c("KD", "KU", "LH", "MA", "NU", "TO"))
+
+# Or 
+
+nrow(subset(PMA,!pl %in% c("KD","KU","MA","LH","NU","TO") & rin=="1"))
+# Answer is 1151
+
+# In how many plots are there birch trees (KS) with a diameter (d) of more than 
+# 50 cm?
+KS<-subset(PMA,pl=="KS")
+KS_d<-subset(KS,d>50)
+KS_d1<-length(unique(KS_d$prt))
+# Answer is 2
+
+# Find the largest first storey pine (MA) or spruce (KU) diameter (d) 
+# measured in 2019
+P_S<-subset(PMA,pl=="MA"|pl=="KU" & rin==1)
+P_S1<-subset(P_S,aasta==2019)
+# Answer is 40.15
+
+# How many plots are there in the different site types than the 
+# Polytrichum-Myrtillus (KM)?
+PRT<-subset(YMA,!kkt=="KM")
+PRT11<-length(unique(PRT$prt))
+# Answer is 68
+
+# How many plots were over 100 years old when last measured?
+with(subset(YMA,vanus>100 & kord==mxkord),length(prt))
+#Answer is 10
+
+# How many plots of the Rhodococcum (PH) site type have been measured on four 
+# occasions?
+PH3<-subset(YMA,kkt=="PH")
+PH4<-subset(PH3,mxkord==4)
+PH5<-length(unique(PH4$prt))
+# Answer is 5
+
+# Calculate the youngest age of plots measured before the year 2000 for the 
+# Oxalis-Myrtillus (JM) site type
+JM<-subset(YMA,kkt=="JM")
+JM1<-subset(JM,aasta<2000)
+min(JM1$vanus)
+
+# Or 
+with(subset(YMA,kkt=="JM" & aasta<2000),min(vanus))
+# Answer is 60
+
+# How many measurements of the second storey deciduous trees have been taken? 
+# (Conifers are coded KD, KU, LH, MA, NU, TO, other codes are deciduous)
+
+DS<-subset(PMA,!pl %in% c("KD", "KU", "LH", "MA", "NU", "TO"))
+DS1<-subset(DS,rin==2)
+# Number of entries is 556, hence answer is 556
+
+# Or
+nrow(subset(PMA,!pl %in% c("KD","KU","MA","LH","NU","TO") & rin=="2"))
+# Answer is 556
+
+# In how many plots are there spruces of the first storey?
+KU<-(subset(PMA,pl=="KU"))
+KU1<-subset(KU,rin==1)
+KU2<-length(unique(KU1$prt))
+
+# Find the largest diameter (d) of the first storey aspen trees (HB) measured 
+# in 2015-2019
+HB<-subset(PMA,pl=="HB" & rin==1)
+HB1<-subset(HB,aasta>=2015 & aasta<=2019)
+
+# How many plots are there in the Rhodococcum (PH) or Oxalis-Rhodococcom (JP) 
+# site types (both together)?
+with(subset(YMA,kkt=="PH" |kkt=="JP"), length(unique(prt)))
+# Answer is 41
+
+# How many plots were less than 30 years old at the first measurement?
+with(subset(YMA,vanus<30 & kord==1),length(prt))
+# Answer is 11
+
+# How many plots of Myrtillus (MS) site type have been measured at least four 
+# times?
+with(subset(YMA,kkt=="MS" & mxkord>=4), length(unique(prt)))     
+# Answer is 17
+
+# Calculate the maximum age of Myrtillus (MS) site type plots measured after 2014
+MS<-subset(YMA,kkt=="MS")
+MS1<-subset(MS,aasta>2014)
+max(MS1$vanus)
+# Answer is 119
+
+# How many measurements of conifer trees of the first storey (conifers are coded
+# KD, KU, LH, MA, NU, TO) were made in 2000-2004?
+CN<-subset(PMA,pl %in% c("KD", "KU", "LH", "MA", "NU", "TO"))
+CN1<-subset(CN,aasta>=2000 & aasta<=2004)
+CN2<-subset(CN1,rin==1)
+# Answer is 6481
+
+# How many plots have oaks (TA), maples (VA) or rowan trees (PI) measured?
+TVP<-subset(PMA,pl %in% c("TA","VA","PI"))
+TVP1<-length(unique(TVP$prt))
+
+# Or
+
+with(subset(PMA,pl %in% c("TA","VA","PI")),length(unique(prt)))
+
+# Find the largest diameter (d) of the first storey trees that is not a 
+# pine (MA) or a spruce (KU).
+PS<-subset(PMA,!pl %in% c("MA","KU"))
+PS1<-subset(PS,rin==1)
+max(PS1$d)
+
+# How many plots are there in the Rhodococcum (PH) or Oxalis-Rhodococcom (JP) 
+# site types (both together)?
+with(subset(YMA,kkt=="PH" |kkt=="JP"), length(unique(prt)))
